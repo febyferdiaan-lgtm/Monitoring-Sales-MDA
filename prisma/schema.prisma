@@ -1,0 +1,247 @@
+// prisma/schema.prisma
+// Database: PostgreSQL (Supabase/Neon)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  SALES
+  FINANCE
+  MANAGER
+}
+
+enum RfqStatus {
+  OPEN
+  QUOTED
+  WON
+  LOST
+}
+
+enum QuotationStatus {
+  DRAFT
+  TERKIRIM
+  DISETUJUI
+  DITOLAK
+}
+
+enum PoStatus {
+  OPEN
+  PROSES
+  SELESAI
+}
+
+enum DeliveryStatus {
+  BELUM_DIKIRIM
+  TERKIRIM
+  DITERIMA_CUSTOMER
+}
+
+enum InvoiceStatus {
+  BELUM_DIBAYAR
+  DIBAYAR_SEBAGIAN
+  LUNAS
+  OVERDUE
+}
+
+enum CustomerStatus {
+  AKTIF
+  TIDAK_AKTIF
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(SALES)
+  createdAt    DateTime @default(now())
+  auditLogs    AuditLog[]
+}
+
+model Customer {
+  id        String         @id @default(cuid())
+  name      String         @unique
+  pic       String?
+  address   String?
+  email     String?
+  phone     String?
+  npwp      String?
+  top       Int            @default(30) // term of payment, days
+  status    CustomerStatus @default(AKTIF)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  rfqs           Rfq[]
+  quotations     Quotation[]
+  purchaseOrders PurchaseOrder[]
+  deliveryOrders DeliveryOrder[]
+  invoices       Invoice[]
+}
+
+model Product {
+  id          String  @id @default(cuid())
+  partNumber  String  @unique
+  description String?
+  uom         String?
+
+  quotationItems QuotationItem[]
+  deliveryItems  DeliveryItem[]
+  invoiceItems   InvoiceItem[]
+}
+
+model Rfq {
+  id              String    @id @default(cuid())
+  no              String    @unique
+  date            DateTime
+  customerId      String
+  customer        Customer  @relation(fields: [customerId], references: [id])
+  description     String?
+  estimatedValue  Decimal?  @db.Decimal(18, 2)
+  status          RfqStatus @default(OPEN)
+  createdAt       DateTime  @default(now())
+
+  quotations Quotation[]
+}
+
+model Quotation {
+  id          String          @id @default(cuid())
+  no          String          @unique
+  date        DateTime
+  rfqId       String?
+  rfq         Rfq?            @relation(fields: [rfqId], references: [id])
+  customerId  String
+  customer    Customer        @relation(fields: [customerId], references: [id])
+  validUntil  DateTime?
+  status      QuotationStatus @default(DRAFT)
+  fileUrl     String?
+  createdAt   DateTime        @default(now())
+
+  items          QuotationItem[]
+  purchaseOrders PurchaseOrder[]
+}
+
+model QuotationItem {
+  id          String    @id @default(cuid())
+  quotationId String
+  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  productId   String?
+  product     Product?  @relation(fields: [productId], references: [id])
+  description String?
+  qty         Decimal   @db.Decimal(18, 2)
+  uom         String?
+  price       Decimal   @db.Decimal(18, 2)
+  amount      Decimal   @db.Decimal(18, 2)
+}
+
+model PurchaseOrder {
+  id          String   @id @default(cuid())
+  no          String   @unique // PO number from customer
+  date        DateTime
+  quotationId String?
+  quotation   Quotation? @relation(fields: [quotationId], references: [id])
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id])
+  value       Decimal  @db.Decimal(18, 2)
+  top         Int      @default(30)
+  dueDate     DateTime?
+  status      PoStatus @default(OPEN)
+  fileUrl     String?
+  createdAt   DateTime @default(now())
+
+  deliveryOrders DeliveryOrder[]
+  invoices       Invoice[]
+}
+
+model DeliveryOrder {
+  id          String         @id @default(cuid())
+  no          String         @unique
+  date        DateTime
+  poId        String?
+  po          PurchaseOrder? @relation(fields: [poId], references: [id])
+  customerId  String
+  customer    Customer       @relation(fields: [customerId], references: [id])
+  status      DeliveryStatus @default(BELUM_DIKIRIM)
+  fileUrl     String?  // scan surat jalan
+  proofUrl    String?  // bukti penerimaan customer
+  createdAt   DateTime       @default(now())
+
+  items    DeliveryItem[]
+  invoices Invoice[]
+}
+
+model DeliveryItem {
+  id              String        @id @default(cuid())
+  deliveryOrderId String
+  deliveryOrder   DeliveryOrder @relation(fields: [deliveryOrderId], references: [id], onDelete: Cascade)
+  productId       String?
+  product         Product?      @relation(fields: [productId], references: [id])
+  description     String?
+  qty             Decimal       @db.Decimal(18, 2)
+  uom             String?
+}
+
+model Invoice {
+  id              String        @id @default(cuid())
+  no              String        @unique
+  date            DateTime
+  poId            String?
+  po              PurchaseOrder? @relation(fields: [poId], references: [id])
+  deliveryOrderId String?
+  deliveryOrder   DeliveryOrder? @relation(fields: [deliveryOrderId], references: [id])
+  customerId      String
+  customer        Customer      @relation(fields: [customerId], references: [id])
+  value           Decimal       @db.Decimal(18, 2) // total termasuk PPN
+  top             Int           @default(30)
+  dueDate         DateTime?
+  status          InvoiceStatus @default(BELUM_DIBAYAR)
+  fileUrl         String?
+  createdAt       DateTime      @default(now())
+
+  items    InvoiceItem[]
+  payments Payment[]
+}
+
+model InvoiceItem {
+  id          String  @id @default(cuid())
+  invoiceId   String
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  productId   String?
+  product     Product? @relation(fields: [productId], references: [id])
+  description String?
+  qty         Decimal  @db.Decimal(18, 2)
+  uom         String?
+  dpp         Decimal  @db.Decimal(18, 2)
+  ppn         Decimal  @db.Decimal(18, 2) @default(0)
+  amount      Decimal  @db.Decimal(18, 2)
+}
+
+model Payment {
+  id         String   @id @default(cuid())
+  invoiceId  String
+  invoice    Invoice  @relation(fields: [invoiceId], references: [id])
+  date       DateTime
+  amount     Decimal  @db.Decimal(18, 2)
+  method     String?
+  refNumber  String?
+  proofUrl   String?
+  createdAt  DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String   // CREATE / UPDATE / DELETE
+  entity    String   // e.g. "Invoice"
+  entityId  String
+  before    Json?
+  after     Json?
+  timestamp DateTime @default(now())
+}
