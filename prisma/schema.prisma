@@ -73,7 +73,7 @@ model Customer {
   email     String?
   phone     String?
   npwp      String?
-  top       Int            @default(30) // term of payment, days
+  top       Int            @default(30)
   status    CustomerStatus @default(AKTIF)
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
@@ -142,7 +142,7 @@ model QuotationItem {
 
 model PurchaseOrder {
   id          String   @id @default(cuid())
-  no          String   @unique // PO number from customer
+  no          String   @unique
   date        DateTime
   quotationId String?
   quotation   Quotation? @relation(fields: [quotationId], references: [id])
@@ -168,8 +168,8 @@ model DeliveryOrder {
   customerId  String
   customer    Customer       @relation(fields: [customerId], references: [id])
   status      DeliveryStatus @default(BELUM_DIKIRIM)
-  fileUrl     String?  // scan surat jalan
-  proofUrl    String?  // bukti penerimaan customer
+  fileUrl     String?
+  proofUrl    String?
   createdAt   DateTime       @default(now())
 
   items    DeliveryItem[]
@@ -197,7 +197,7 @@ model Invoice {
   deliveryOrder   DeliveryOrder? @relation(fields: [deliveryOrderId], references: [id])
   customerId      String
   customer        Customer      @relation(fields: [customerId], references: [id])
-  value           Decimal       @db.Decimal(18, 2) // total termasuk PPN
+  value           Decimal       @db.Decimal(18, 2)
   top             Int           @default(30)
   dueDate         DateTime?
   status          InvoiceStatus @default(BELUM_DIBAYAR)
@@ -238,8 +238,8 @@ model AuditLog {
   id        String   @id @default(cuid())
   userId    String?
   user      User?    @relation(fields: [userId], references: [id])
-  action    String   // CREATE / UPDATE / DELETE
-  entity    String   // e.g. "Invoice"
+  action    String
+  entity    String
   entityId  String
   before    Json?
   after     Json?
