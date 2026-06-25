@@ -2,6 +2,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import StatusPill from "@/components/StatusPill";
+import { useRouter } from "next/navigation";
 
 type Quotation = {
   id: string; no: string; date: string; status: string;
@@ -10,6 +11,7 @@ type Quotation = {
 };
 
 export default function QuotationPage() {
+  const router = useRouter();
   const [data, setData] = useState<Quotation[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -19,9 +21,14 @@ export default function QuotationPage() {
 
   return (
     <div className="p-8">
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-navy">Penawaran (Quotation)</h1>
-        <p className="text-sm text-slate-500">Quotation yang dikirim ke customer</p>
+  <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-navy">Penawaran (Quotation)</h1>
+          <p className="text-sm text-slate-500">Quotation yang dikirim ke customer</p>
+        </div>
+        <button onClick={() => router.push("/quotation/new")} className="rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-navy">
+          + Tambah Penawaran
+        </button>
       </div>
       <div className="overflow-x-auto rounded-lg border bg-white">
         <table className="w-full text-sm">
@@ -49,7 +56,6 @@ export default function QuotationPage() {
           </tbody>
         </table>
       </div>
-      <p className="mt-4 text-xs text-slate-400">Form tambah penawaran dengan multi-item menyusul — gunakan API <code>/api/quotation</code> untuk integrasi sementara.</p>
-    </div>
+         </div>
   );
 }
