@@ -15,8 +15,7 @@ type Customer = {
   _count?: { rfqs: number; quotations: number; purchaseOrders: number; invoices: number };
 };
 
-const emptyForm = { name: "", pic: "", address: "", email: "", phone: "", npwp: "", top: 30, status: "AKTIF" as const };
-
+const emptyForm: { name: string; pic: string; address: string; email: string; phone: string; npwp: string; top: number; status: "AKTIF" | "TIDAK_AKTIF" } = { name: "", pic: "", address: "", email: "", phone: "", npwp: "", top: 30, status: "AKTIF" };
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [search, setSearch] = useState("");
