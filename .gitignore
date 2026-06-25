@@ -7,3 +7,4 @@ node_modules/
 .DS_Store
 /data/*.xlsx
 dist/
+mda-env-backup.env
