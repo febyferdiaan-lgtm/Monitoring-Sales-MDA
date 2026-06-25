@@ -12,4 +12,7 @@ export async function POST(req: NextRequest) {
   const product = await prisma.product.upsert({
     where: { partNumber: body.partNumber },
     update: {},
-    create: { partNumber:
+    create: { partNumber: body.partNumber, description: body.description || null, uom: body.uom || null },
+  });
+  return NextResponse.json(product, { status: 201 });
+}

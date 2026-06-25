@@ -21,7 +21,7 @@ export default function QuotationPage() {
 
   return (
     <div className="p-8">
-  <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-navy">Penawaran (Quotation)</h1>
           <p className="text-sm text-slate-500">Quotation yang dikirim ke customer</p>
@@ -56,6 +56,6 @@ export default function QuotationPage() {
           </tbody>
         </table>
       </div>
-         </div>
+    </div>
   );
 }
